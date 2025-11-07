@@ -3,6 +3,4 @@ node_modules/
 uploads/
 *.log
 .DS_Store
-docs/images/*.png
-!docs/images/.gitkeep
 
