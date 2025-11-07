@@ -1,0 +1,27 @@
+{
+  "name": "gestion-archivo-api",
+  "version": "1.0.0",
+  "description": "API REST para gestión de archivos con autenticación JWT",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js"
+  },
+  "keywords": [
+    "express",
+    "rest",
+    "api",
+    "jwt",
+    "file-upload",
+    "express-fileupload"
+  ],
+  "author": "Magdalena Inalaf",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-fileupload": "^1.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.3.1"
+  }
+}
+
