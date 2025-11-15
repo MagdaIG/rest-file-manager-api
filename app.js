@@ -29,6 +29,7 @@ app.use(fileUpload({
   createParentPath: true
 }));
 app.use(express.static('public'));
+app.use('/avatars', express.static('public/avatars'));
 
 // Rutas de la API
 app.use('/api/users', userRoutes);

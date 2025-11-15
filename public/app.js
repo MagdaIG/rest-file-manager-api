@@ -42,6 +42,21 @@ const profileModalCancel = document.getElementById('profile-modal-cancel');
 const profileModalSave = document.getElementById('profile-modal-save');
 const updateProfileForm = document.getElementById('update-profile-form');
 
+// Elementos de avatar
+const userAvatar = document.getElementById('user-avatar');
+const manageAvatarBtn = document.getElementById('manage-avatar-btn');
+const avatarModal = document.getElementById('avatar-modal');
+const avatarModalClose = document.getElementById('avatar-modal-close');
+const avatarModalCloseBtn = document.getElementById('avatar-modal-close-btn');
+const defaultAvatarsList = document.getElementById('default-avatars-list');
+const avatarFileInput = document.getElementById('avatar-file-input');
+const selectAvatarFileBtn = document.getElementById('select-avatar-file-btn');
+const avatarPreviewContainer = document.getElementById('avatar-preview-container');
+const avatarPreview = document.getElementById('avatar-preview');
+const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+const deleteAvatarBtn = document.getElementById('delete-avatar-btn');
+const deleteAccountBtn = document.getElementById('delete-account-btn');
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
     initModals();
@@ -67,6 +82,17 @@ function initModals() {
     profileModalCancel.addEventListener('click', () => closeProfileModal());
     profileModal.querySelector('.modal-overlay').addEventListener('click', () => closeProfileModal());
     profileModalSave.addEventListener('click', handleUpdateProfile);
+    
+    // Modal de avatar
+    if (avatarModalClose) {
+        avatarModalClose.addEventListener('click', () => closeAvatarModal());
+    }
+    if (avatarModalCloseBtn) {
+        avatarModalCloseBtn.addEventListener('click', () => closeAvatarModal());
+    }
+    if (avatarModal) {
+        avatarModal.querySelector('.modal-overlay').addEventListener('click', () => closeAvatarModal());
+    }
     
     // Navegación desde página de bienvenida
     startBtn.addEventListener('click', () => {
@@ -177,6 +203,7 @@ async function handleUpdateProfile() {
             // Actualizar la visualización del usuario
             document.getElementById('username-display').textContent = currentUser.username;
             document.getElementById('user-email').textContent = currentUser.email;
+            updateUserAvatar();
         } else {
             showModal('Error', data.message || 'Error al actualizar perfil', 'error');
         }
@@ -282,6 +309,18 @@ function showMainSection() {
     mainSection.classList.remove('hidden');
     document.getElementById('username-display').textContent = currentUser.username;
     document.getElementById('user-email').textContent = currentUser.email;
+    updateUserAvatar();
+}
+
+// Actualizar avatar del usuario
+function updateUserAvatar() {
+    if (currentUser && currentUser.avatar) {
+        userAvatar.src = currentUser.avatar;
+        userAvatar.style.display = 'block';
+    } else {
+        userAvatar.src = '';
+        userAvatar.style.display = 'none';
+    }
 }
 
 // Configurar event listeners
@@ -297,6 +336,30 @@ function setupEventListeners() {
     
     // Editar perfil
     editProfileBtn.addEventListener('click', showProfileModal);
+    
+    // Gestionar avatar
+    if (manageAvatarBtn) {
+        manageAvatarBtn.addEventListener('click', showAvatarModal);
+    }
+    
+    // Avatar file input
+    if (selectAvatarFileBtn) {
+        selectAvatarFileBtn.addEventListener('click', () => avatarFileInput.click());
+    }
+    if (avatarFileInput) {
+        avatarFileInput.addEventListener('change', handleAvatarFileSelect);
+    }
+    if (uploadAvatarBtn) {
+        uploadAvatarBtn.addEventListener('click', handleUploadAvatar);
+    }
+    if (deleteAvatarBtn) {
+        deleteAvatarBtn.addEventListener('click', handleDeleteAvatar);
+    }
+    
+    // Eliminar cuenta
+    if (deleteAccountBtn) {
+        deleteAccountBtn.addEventListener('click', handleDeleteAccount);
+    }
     
     // Subida de archivos
     uploadArea.addEventListener('click', () => fileInput.click());
@@ -684,6 +747,232 @@ async function deleteFile(fileId) {
     }
 }
 
+
+// Mostrar modal de avatar
+async function showAvatarModal() {
+    avatarModal.classList.remove('hidden');
+    await loadDefaultAvatars();
+}
+
+// Cerrar modal de avatar
+function closeAvatarModal() {
+    avatarModal.classList.add('hidden');
+    avatarPreviewContainer.classList.add('hidden');
+    avatarFileInput.value = '';
+}
+
+// Cargar avatares predeterminados
+async function loadDefaultAvatars() {
+    try {
+        defaultAvatarsList.innerHTML = `
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Cargando avatares...</p>
+            </div>
+        `;
+        
+        const response = await fetch('/api/users/avatars/defaults', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.avatars) {
+            defaultAvatarsList.innerHTML = data.avatars.map(avatar => {
+                // Verificar si este avatar está seleccionado comparando la URL
+                const isSelected = currentUser && currentUser.avatar && currentUser.avatar === avatar.url;
+                return `
+                    <div class="avatar-item ${isSelected ? 'selected' : ''}" data-avatar-id="${avatar.id}">
+                        <img src="${avatar.url}" alt="${avatar.name}">
+                    </div>
+                `;
+            }).join('');
+            
+            // Agregar event listeners a los avatares
+            defaultAvatarsList.querySelectorAll('.avatar-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const avatarId = item.dataset.avatarId;
+                    selectDefaultAvatar(avatarId);
+                });
+            });
+        } else {
+            defaultAvatarsList.innerHTML = '<p class="empty-message">Error al cargar avatares</p>';
+        }
+    } catch (error) {
+        defaultAvatarsList.innerHTML = '<p class="empty-message">Error de conexión</p>';
+        console.error('Error:', error);
+    }
+}
+
+// Seleccionar avatar predeterminado
+async function selectDefaultAvatar(avatarId) {
+    try {
+        const response = await fetch('/api/users/avatar/select', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ avatarId })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            currentUser.avatar = data.avatar;
+            updateUserAvatar();
+            showModal('Éxito', 'Avatar seleccionado exitosamente', 'success');
+            closeAvatarModal();
+            await loadDefaultAvatars(); // Recargar para actualizar selección
+        } else {
+            showModal('Error', data.message || 'Error al seleccionar avatar', 'error');
+        }
+    } catch (error) {
+        showModal('Error', 'Error de conexión', 'error');
+        console.error('Error:', error);
+    }
+}
+
+// Manejar selección de archivo de avatar
+function handleAvatarFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validar tipo
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        showModal('Error', 'Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, GIF, WEBP)', 'error');
+        return;
+    }
+    
+    // Validar tamaño (2MB)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showModal('Error', 'El archivo es demasiado grande. Tamaño máximo: 2MB', 'error');
+        return;
+    }
+    
+    // Mostrar preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        avatarPreview.src = e.target.result;
+        avatarPreviewContainer.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+}
+
+// Subir avatar personalizado
+async function handleUploadAvatar() {
+    const file = avatarFileInput.files[0];
+    if (!file) {
+        showModal('Error', 'Por favor selecciona una imagen', 'error');
+        return;
+    }
+    
+    try {
+        uploadAvatarBtn.disabled = true;
+        uploadAvatarBtn.textContent = 'Subiendo...';
+        
+        const formData = new FormData();
+        formData.append('avatar', file);
+        
+        const response = await fetch('/api/users/avatar/upload', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            currentUser.avatar = data.avatar;
+            updateUserAvatar();
+            showModal('Éxito', 'Avatar subido exitosamente', 'success');
+            closeAvatarModal();
+        } else {
+            showModal('Error', data.message || 'Error al subir avatar', 'error');
+        }
+    } catch (error) {
+        showModal('Error', 'Error de conexión', 'error');
+        console.error('Error:', error);
+    } finally {
+        uploadAvatarBtn.disabled = false;
+        uploadAvatarBtn.textContent = 'Subir Avatar';
+    }
+}
+
+// Eliminar avatar
+async function handleDeleteAvatar() {
+    const confirmed = await showConfirmModal(
+        'Confirmar eliminación',
+        '¿Estás seguro de que deseas eliminar tu avatar? Esta acción no se puede deshacer.'
+    );
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/users/avatar', {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            currentUser.avatar = null;
+            updateUserAvatar();
+            showModal('Éxito', 'Avatar eliminado exitosamente', 'success');
+            closeAvatarModal();
+            await loadDefaultAvatars(); // Recargar para actualizar selección
+        } else {
+            showModal('Error', data.message || 'Error al eliminar avatar', 'error');
+        }
+    } catch (error) {
+        showModal('Error', 'Error de conexión', 'error');
+        console.error('Error:', error);
+    }
+}
+
+// Eliminar cuenta
+async function handleDeleteAccount() {
+    const confirmed = await showConfirmModal(
+        'Confirmar eliminación de cuenta',
+        '¿Estás seguro de que deseas eliminar tu cuenta? Esta acción es permanente y no se puede deshacer. Se eliminarán todos tus datos, archivos y avatares.'
+    );
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/users/profile', {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showModal('Cuenta eliminada', 'Tu cuenta ha sido eliminada exitosamente', 'success');
+            handleLogout();
+        } else {
+            showModal('Error', data.message || 'Error al eliminar cuenta', 'error');
+        }
+    } catch (error) {
+        showModal('Error', 'Error de conexión', 'error');
+        console.error('Error:', error);
+    }
+}
 
 // Formatear tamaño de archivo
 function formatFileSize(bytes) {

@@ -30,6 +30,7 @@ class User {
       username: userData.username,
       email: userData.email,
       password: userData.password, // En producción, hashear la contraseña
+      avatar: userData.avatar || null,
       createdAt: new Date().toISOString()
     };
     users.push(newUser);
@@ -43,9 +44,10 @@ class User {
     }
 
     const user = users[userIndex];
-    if (updateData.username) user.username = updateData.username;
-    if (updateData.email) user.email = updateData.email;
-    if (updateData.password) user.password = updateData.password; // En producción, hashear
+    if (updateData.username !== undefined) user.username = updateData.username;
+    if (updateData.email !== undefined) user.email = updateData.email;
+    if (updateData.password !== undefined) user.password = updateData.password; // En producción, hashear
+    if (updateData.avatar !== undefined) user.avatar = updateData.avatar;
     user.updatedAt = new Date().toISOString();
 
     users[userIndex] = user;

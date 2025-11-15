@@ -122,6 +122,114 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Eliminar Cuenta",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener Avatares Predeterminados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/avatars/defaults",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "avatars", "defaults"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Subir Avatar Personalizado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/avatar/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "avatar", "upload"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Seleccionar Avatar Predeterminado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"avatarId\": \"avatar1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/avatar/select",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "avatar", "select"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar Avatar",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "avatar"]
+            }
+          },
+          "response": []
         }
       ]
     },

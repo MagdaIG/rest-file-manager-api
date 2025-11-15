@@ -17,6 +17,11 @@ API REST desarrollada con Node.js y Express que permite la gestión de archivos 
 - Autenticación y autorización con JWT
 - Registro y login de usuarios
 - Actualización de perfil de usuario (PUT)
+- Eliminación de cuenta de usuario (DELETE)
+- Sistema de avatares:
+  - Selección de avatares predeterminados
+  - Subida de avatar personalizado
+  - Eliminación de avatar
 - Subida de archivos con validación de tamaño y tipo
 - Listado y eliminación de archivos
 - Frontend moderno e intuitivo
@@ -58,7 +63,7 @@ Este comando instalará todas las dependencias necesarias:
 
 ## Configuración
 
-1. El archivo `.env` ya está incluido en el proyecto con valores por defecto. Si necesitas modificarlo, puedes editar las siguientes variables:
+1. Crea un archivo `.env` en la raíz del proyecto con las siguientes variables de entorno:
 
 ```
 PORT=3000
@@ -67,9 +72,15 @@ UPLOAD_DIR=./uploads
 MAX_FILE_SIZE=10485760
 ```
 
-**Importante**: En un entorno de producción, debes cambiar el valor de `JWT_SECRET` por una cadena segura y aleatoria.
+**Importante**: 
+- El archivo `.env` no está incluido en el repositorio por razones de seguridad (está en `.gitignore`).
+- Debes crear este archivo manualmente antes de ejecutar la aplicación.
+- En un entorno de producción, debes cambiar el valor de `JWT_SECRET` por una cadena segura y aleatoria. Puedes generar uno usando:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
 
-2. El directorio `uploads` se creará automáticamente cuando ejecutes la aplicación por primera vez.
+2. Los directorios `uploads` y `public/avatars` se crearán automáticamente cuando ejecutes la aplicación por primera vez.
 
 ## Ejecución
 
@@ -136,7 +147,23 @@ http://localhost:3000
    - Confirma la eliminación
    - El archivo será eliminado del servidor
 
-6. **Cerrar Sesión**:
+6. **Gestionar Avatar**:
+   - Haz clic en el icono de edición sobre tu avatar
+   - Puedes seleccionar un avatar predeterminado de la galería
+   - O subir una imagen personalizada (máximo 2MB, formatos: JPEG, PNG, GIF, WEBP)
+   - También puedes eliminar tu avatar actual
+
+7. **Editar Perfil**:
+   - Haz clic en el botón "Editar Perfil"
+   - Actualiza tu nombre de usuario, email o contraseña
+   - Los campos que dejes en blanco no se modificarán
+
+8. **Eliminar Cuenta**:
+   - Haz clic en el botón "Eliminar Cuenta"
+   - Confirma la eliminación en el modal
+   - Se eliminarán todos tus datos, archivos y avatares
+
+9. **Cerrar Sesión**:
    - Haz clic en el botón "Cerrar Sesión" en la parte superior
    - Serás redirigido a la pantalla de login
 
@@ -287,8 +314,130 @@ Content-Type: application/json
     "id": 1,
     "username": "nuevo_nombre_usuario",
     "email": "nuevo@email.com",
+    "avatar": "/avatars/defaults/avatar1.svg",
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2024-01-02T00:00:00.000Z"
+  }
+}
+```
+
+#### DELETE /api/users/profile
+Elimina la cuenta del usuario autenticado. Esta acción es permanente.
+
+**Headers**:
+```
+Authorization: Bearer jwt_token_aqui
+```
+
+**Respuesta exitosa (200)**:
+```json
+{
+  "success": true,
+  "message": "Usuario eliminado exitosamente"
+}
+```
+
+### Gestión de Avatares
+
+#### GET /api/users/avatars/defaults
+Obtiene la lista de avatares predeterminados disponibles.
+
+**Headers**:
+```
+Authorization: Bearer jwt_token_aqui
+```
+
+**Respuesta exitosa (200)**:
+```json
+{
+  "success": true,
+  "avatars": [
+    {
+      "id": "avatar1",
+      "url": "/avatars/defaults/avatar1.svg",
+      "name": "avatar1.svg"
+    }
+  ]
+}
+```
+
+#### POST /api/users/avatar/upload
+Sube un avatar personalizado. Requiere autenticación.
+
+**Headers**:
+```
+Authorization: Bearer jwt_token_aqui
+```
+
+**Body (FormData)**:
+```
+avatar: [archivo_imagen]
+```
+
+**Respuesta exitosa (200)**:
+```json
+{
+  "success": true,
+  "message": "Avatar subido exitosamente",
+  "avatar": "/avatars/users/user_1_1234567890.jpg",
+  "user": {
+    "id": 1,
+    "username": "nombre_usuario",
+    "email": "usuario@email.com",
+    "avatar": "/avatars/users/user_1_1234567890.jpg"
+  }
+}
+```
+
+#### POST /api/users/avatar/select
+Selecciona un avatar predeterminado. Requiere autenticación.
+
+**Headers**:
+```
+Authorization: Bearer jwt_token_aqui
+Content-Type: application/json
+```
+
+**Body (JSON)**:
+```json
+{
+  "avatarId": "avatar1"
+}
+```
+
+**Respuesta exitosa (200)**:
+```json
+{
+  "success": true,
+  "message": "Avatar seleccionado exitosamente",
+  "avatar": "/avatars/defaults/avatar1.svg",
+  "user": {
+    "id": 1,
+    "username": "nombre_usuario",
+    "email": "usuario@email.com",
+    "avatar": "/avatars/defaults/avatar1.svg"
+  }
+}
+```
+
+#### DELETE /api/users/avatar
+Elimina el avatar actual del usuario. Requiere autenticación.
+
+**Headers**:
+```
+Authorization: Bearer jwt_token_aqui
+```
+
+**Respuesta exitosa (200)**:
+```json
+{
+  "success": true,
+  "message": "Avatar eliminado exitosamente",
+  "user": {
+    "id": 1,
+    "username": "nombre_usuario",
+    "email": "usuario@email.com",
+    "avatar": null
   }
 }
 ```
@@ -407,7 +556,7 @@ La API utiliza los siguientes códigos de estado HTTP:
 gestion-archivo-v2/
 ├── app.js                 # Servidor Express principal
 ├── package.json           # Dependencias y scripts del proyecto
-├── .env                   # Variables de entorno
+├── .env                   # Variables de entorno (debes crearlo manualmente)
 ├── .gitignore            # Archivos a ignorar en Git
 ├── README.md             # Este archivo
 ├── controllers/          # Controladores (lógica de negocio)
@@ -422,12 +571,17 @@ gestion-archivo-v2/
 ├── middleware/           # Middleware personalizado
 │   └── auth.js           # Middleware de autenticación JWT
 ├── uploads/              # Directorio donde se guardan los archivos (se crea automáticamente)
+├── public/                # Archivos estáticos del frontend
+│   ├── index.html        # Página principal
+│   ├── styles.css        # Estilos CSS
+│   ├── app.js            # Lógica del frontend
+│   └── avatars/          # Directorio de avatares (se crea automáticamente)
+│       ├── defaults/     # Avatares predeterminados
+│       └── users/        # Avatares personalizados de usuarios
 ├── docs/                 # Documentación
-│   └── images/           # Capturas de pantalla
-└── public/               # Archivos estáticos del frontend
-    ├── index.html        # Página principal
-    ├── styles.css        # Estilos CSS
-    └── app.js            # Lógica del frontend
+│   ├── images/           # Capturas de pantalla
+│   ├── postman-collection.json  # Colección de Postman
+│   └── PRUEBAS_POSTMAN.md # Guía de pruebas con Postman
 ```
 
 ## Seguridad
@@ -592,6 +746,16 @@ Se incluye una colección de Postman completa en `docs/postman-collection.json` 
 5. El token JWT se guardará automáticamente después de hacer login (gracias al script de test en la petición de login)
 
 **Nota**: Asegúrate de actualizar la variable `baseUrl` en la colección si estás usando un puerto diferente al 3000.
+
+### Guía de Pruebas con Postman
+
+Para una guía detallada sobre cómo usar la colección de Postman y qué pruebas realizar, consulta el archivo `docs/PRUEBAS_POSTMAN.md`. Este documento incluye:
+
+- Instrucciones paso a paso para cada endpoint
+- Ejemplos de respuestas esperadas
+- Flujo completo de pruebas recomendado
+- Pruebas de validación y manejo de errores
+- Solución de problemas comunes
 
 ## Pruebas con Postman o cURL
 
